@@ -5,7 +5,7 @@ import '@fortawesome/fontawesome-free/css/all.css';
 
 import { TodoList } from './components/TodoList';
 import { TodoFilter } from './components/TodoFilter';
-import { TodoModal } from './components/TodoModal';
+// import { TodoModal } from './components/TodoModal';
 import { Loader } from './components/Loader';
 import { Todo } from './types/Todo';
 
@@ -13,16 +13,30 @@ import {getTodos, getUsers} from './api'
 
 export const App: React.FC = () => {
   const [todosAll, setTodosAll] = useState<Todo[]>([]);
-  const [loader, setLoader] = useState<boolean>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [filterType, setFilterType] = useState<'all' | 'active' | 'completed'>('all');
+
+  const [filterList, setFilterList] = useState<Todo[]>([]);
+
+
 
   useEffect(() => {
-    getTodos().then((response) => {
-      // console.log(response);
+    setLoading(true);
 
-      setTodosAll(response);
-    })
-    //// При есинк Евейт тут нужно вызывать саму функцию а при зен - нет?
+    getTodos()
+      .then(setTodosAll)
+      .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (filterType === 'all') {
+      setFilterList(todosAll);
+    } else if (filterType === 'active') {
+      setFilterList(todosAll.filter(todo => !todo.completed));
+    } else if (filterType === 'completed') {
+      setFilterList(todosAll.filter(todo => todo.completed));
+    }
+  }, [filterType, todosAll]);
 
   return (
     <>
@@ -32,12 +46,14 @@ export const App: React.FC = () => {
             <h1 className="title">Todos:</h1>
 
             <div className="block">
-              <TodoFilter />
+              <TodoFilter filterType={filterType} newFilterValue={(newValue) => setFilterType(newValue) } />
             </div>
 
             <div className="block">
-              <Loader />
-              <TodoList todos={ todosAll } />
+              {loading && (<Loader />)}
+              {!loading && todosAll.length > 0 && (
+                <TodoList todos={ filterList } />
+              )}
             </div>
           </div>
         </div>

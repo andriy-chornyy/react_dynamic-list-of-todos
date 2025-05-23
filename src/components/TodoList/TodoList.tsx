@@ -1,7 +1,7 @@
+// import { todo } from 'node:test';
 import React from 'react';
 import { Todo } from '../../types/Todo';
 import { useState } from 'react';
-import { todo } from 'node:test';
 
 type Props = {
   todos: Todo[];
@@ -10,17 +10,14 @@ type Props = {
 // const handleClick =
 
 export const TodoList: React.FC<Props> = ({ todos }) => {
-  const [selected, setSelected] = useState(false);
-  // const [idSelected, setIdSelected] = useState<number | null>(null);
+  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
 
   const handleClick = (id: number) => {
+    const todoToSelect = todos.find(todo => todo.id === id);
 
-    // if (id) {
-    //   todos.find(todo.id === id)
-    // }
-    setSelected(!selected);
-
-    console.log('id di id id id', id)
+    if (todoToSelect) {
+      setSelectedTodo(todoToSelect);
+    }
   }
 
   return (
@@ -44,7 +41,7 @@ export const TodoList: React.FC<Props> = ({ todos }) => {
             <tr
               data-cy="todo"
               key={id}
-              className={selected ? "has-background-info-light" : ""}
+              className={selectedTodo && selectedTodo.id === id ? "has-background-info-light" : ""}
             >
               <td className="is-vcentered">{index + 1}</td>
 
@@ -63,7 +60,7 @@ export const TodoList: React.FC<Props> = ({ todos }) => {
               <td className="has-text-right is-vcentered">
                 <button data-cy="selectButton" className="button" type="button" onClick={() => handleClick(id)}>
                   <span className="icon">
-                    <i className="far fa-eye-slash" />
+                    <i className={selectedTodo && selectedTodo.id === id ? "far fa-eye-slash" : "far fa-eye"}/>
                   </span>
                 </button>
               </td>
