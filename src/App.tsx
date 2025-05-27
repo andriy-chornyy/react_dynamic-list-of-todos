@@ -5,38 +5,76 @@ import '@fortawesome/fontawesome-free/css/all.css';
 
 import { TodoList } from './components/TodoList';
 import { TodoFilter } from './components/TodoFilter';
-// import { TodoModal } from './components/TodoModal';
+import { TodoModal } from './components/TodoModal';
 import { Loader } from './components/Loader';
 import { Todo } from './types/Todo';
+import { User } from './types/User';
 
-import {getTodos, getUsers} from './api'
+import { getTodos, getUser } from './api';
 
 export const App: React.FC = () => {
   const [todosAll, setTodosAll] = useState<Todo[]>([]);
+
+  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
+
   const [loading, setLoading] = useState<boolean>(false);
-  const [filterType, setFilterType] = useState<'all' | 'active' | 'completed'>('all');
 
-  const [filterList, setFilterList] = useState<Todo[]>([]);
+  const [sortField, setSortField] = useState<string>('all');
 
+  const [filteredList, setFilteredList] = useState<Todo[]>([]);
 
+  const [newSearchValue, setNewSearchValue] = useState<string>('');
+
+  const [user, setUser] = useState<User | null>(null);
+
+  const [loadingUser, setLoadingUser] = useState(false);
 
   useEffect(() => {
     setLoading(true);
 
     getTodos()
       .then(setTodosAll)
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
-    if (filterType === 'all') {
-      setFilterList(todosAll);
-    } else if (filterType === 'active') {
-      setFilterList(todosAll.filter(todo => !todo.completed));
-    } else if (filterType === 'completed') {
-      setFilterList(todosAll.filter(todo => todo.completed));
+    let vueList = todosAll;
+
+    if (sortField === 'all') {
+      vueList = todosAll;
     }
-  }, [filterType, todosAll]);
+
+    if (sortField === 'active') {
+      vueList = todosAll.filter(todo => todo.completed === false);
+    }
+
+    if (sortField === 'completed') {
+      vueList = todosAll.filter(todo => todo.completed === true);
+    }
+
+    if (newSearchValue.length > 0) {
+      vueList = vueList.filter(todo =>
+        todo.title.toLowerCase().includes(newSearchValue.toLowerCase()),
+      );
+    }
+
+    setFilteredList(vueList);
+  }, [todosAll, sortField, newSearchValue]);
+
+  useEffect(() => {
+    if (selectedTodo) {
+      setLoadingUser(true);
+
+      getUser(selectedTodo.userId)
+        .then(setUser)
+        .finally(() => setLoadingUser(false));
+    }
+  }, [selectedTodo]);
+
+  const handleCloseModal = () => {
+    setSelectedTodo(null);
+    setUser(null);
+  };
 
   return (
     <>
@@ -46,20 +84,36 @@ export const App: React.FC = () => {
             <h1 className="title">Todos:</h1>
 
             <div className="block">
-              <TodoFilter filterType={filterType} newFilterValue={(newValue) => setFilterType(newValue) } />
+              <TodoFilter
+                sortBy={(filterValue: string) => setSortField(filterValue)}
+                search={(value: string) => setNewSearchValue(value)}
+              />
             </div>
 
             <div className="block">
-              {loading && (<Loader />)}
+              {loading && <Loader />}
               {!loading && todosAll.length > 0 && (
-                <TodoList todos={ filterList } />
+                <TodoList
+                todos={filteredList}
+                selectedTodoToApp={(todo: Todo | null) =>
+                  setSelectedTodo(todo)
+                }
+                selectedTodo={selectedTodo}
+              />
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* <TodoModal /> */}
+      {selectedTodo && (
+        <TodoModal
+          user={user}
+          selectedTodo={selectedTodo}
+          loadingUser={loadingUser}
+          onClose={handleCloseModal}
+        />
+      )}
     </>
   );
 };
